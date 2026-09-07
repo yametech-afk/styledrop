@@ -51,7 +51,12 @@ class AuthService {
         return cred.user;
       }
 
-      final googleUser = await GoogleSignIn().signIn();
+      final googleUser = await GoogleSignIn(
+        // The Web client ID from google-services.json (client_type: 3).
+        // Required for Google Sign-In on Android to work with Firebase Auth.
+        serverClientId:
+            '497002874460-msl7q6fg667oqk1l85h91dt86tlnh8d1.apps.googleusercontent.com',
+      ).signIn();
       if (googleUser == null) return null; // user cancelled
 
       final googleAuth = await googleUser.authentication;
@@ -171,7 +176,10 @@ class AuthService {
   Future<void> signOut() async {
     // Sign out of Google too so the account picker shows next time.
     try {
-      if (!kIsWeb) await GoogleSignIn().signOut();
+      if (!kIsWeb) await GoogleSignIn(
+        serverClientId:
+            '497002874460-msl7q6fg667oqk1l85h91dt86tlnh8d1.apps.googleusercontent.com',
+      ).signOut();
     } catch (_) {}
     await _auth.signOut();
   }
