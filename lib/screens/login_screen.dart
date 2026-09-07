@@ -114,15 +114,21 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 children: [
                   const Spacer(flex: 2),
-                  Container(
-                    width: 84,
-                    height: 84,
-                    decoration: BoxDecoration(
-                      color: AppColors.ink,
-                      borderRadius: BorderRadius.circular(24),
+                  Image.asset(
+                    'assets/icon/logo.png',
+                    width: 96,
+                    height: 96,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        color: AppColors.ink,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text('✨', style: TextStyle(fontSize: 36)),
                     ),
-                    alignment: Alignment.center,
-                    child: const Text('✨', style: TextStyle(fontSize: 36)),
                   ),
                   const SizedBox(height: 24),
                   Text('STYLEDROP',
