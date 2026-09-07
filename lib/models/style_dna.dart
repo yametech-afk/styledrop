@@ -51,7 +51,7 @@ class UserProfile {
   String subscriptionTier; // FREE, PRO, PRO_PLUS
 
   UserProfile({
-    this.name = 'Alex Rivera',
+    this.name = '',
     this.email = '',
     this.photoPath,
     this.isGuest = false,
@@ -70,7 +70,7 @@ class UserProfile {
 
   factory UserProfile.fromMap(Map<dynamic, dynamic> map) {
     return UserProfile(
-      name: map['name'] as String? ?? 'Alex Rivera',
+      name: map['name'] as String? ?? '',
       email: map['email'] as String? ?? '',
       photoPath: map['photoPath'] as String?,
       isGuest: map['isGuest'] as bool? ?? false,

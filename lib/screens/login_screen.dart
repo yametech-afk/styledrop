@@ -39,14 +39,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Runs an auth action, showing a spinner and surfacing errors as SnackBars.
-  /// On success the auth-state stream in AppRoot handles navigation.
   Future<void> _run(Future<Object?> Function() action) async {
     if (_loading) return;
     setState(() => _loading = true);
     try {
       await action();
-      // No manual navigation — StreamBuilder in AppRoot reacts to the change.
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (_) {
@@ -105,58 +102,35 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - 48,
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom -
+                  48,
             ),
             child: IntrinsicHeight(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Spacer(flex: 2),
-                  Image.asset(
-                    'assets/icon/logo.png',
-                    width: 96,
-                    height: 96,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        color: AppColors.ink,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text('✨', style: TextStyle(fontSize: 36)),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text('STYLEDROP',
-                      style: Theme.of(context).textTheme.displayLarge),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your AI-powered personal stylist',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
+                  _buildHero(),
                   const Spacer(flex: 2),
                   if (_loading)
                     const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: CircularProgressIndicator(color: AppColors.ink),
+                      padding: EdgeInsets.symmetric(vertical: 32),
+                      child: CircularProgressIndicator(
+                        color: AppColors.ink,
+                        strokeWidth: 2,
+                      ),
                     )
                   else if (!_showEmailForm)
                     ..._buildProviderButtons()
                   else
                     ..._buildEmailForm(),
                   const Spacer(),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16, top: 16),
-                    child: Text(
-                      'By continuing you agree to our Terms & Privacy Policy',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
+                  _buildFooter(),
                 ],
               ),
             ),
@@ -166,84 +140,169 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildHero() {
+    return Column(
+      children: [
+        // Logo
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceAlt,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.line, width: 1),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Image.asset(
+            'assets/icon/logo.png',
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.style_outlined,
+              size: 40,
+              color: AppColors.ink,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        // App name
+        Text(
+          'StyleDrop',
+          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                letterSpacing: -1,
+              ),
+        ),
+        const SizedBox(height: 6),
+        // Tagline
+        Text(
+          'Your AI Wardrobe Stylist',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.mutedText,
+                fontStyle: FontStyle.italic,
+                fontSize: 14,
+              ),
+        ),
+        const SizedBox(height: 28),
+        // Divider
+        Row(
+          children: [
+            Expanded(
+              child: Divider(color: AppColors.line, thickness: 1),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Sign in to continue',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.mutedText,
+                      letterSpacing: 0.3,
+                    ),
+              ),
+            ),
+            Expanded(
+              child: Divider(color: AppColors.line, thickness: 1),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   List<Widget> _buildProviderButtons() {
     return [
-      _AuthButton(
-        icon: Icons.g_mobiledata_rounded,
+      _SocialButton(
+        svgPath: null,
+        iconData: Icons.g_mobiledata_rounded,
         label: 'Continue with Google',
         onTap: () => _run(AuthService.instance.signInWithGoogle),
       ),
-      const SizedBox(height: 12),
-      _AuthButton(
-        icon: Icons.apple_rounded,
+      const SizedBox(height: 10),
+      _SocialButton(
+        svgPath: null,
+        iconData: Icons.apple_rounded,
         label: 'Continue with Apple',
         onTap: () => _run(AuthService.instance.signInWithApple),
       ),
-      const SizedBox(height: 12),
-      _AuthButton(
-        icon: Icons.email_outlined,
+      const SizedBox(height: 10),
+      _SocialButton(
+        svgPath: null,
+        iconData: Icons.mail_outline_rounded,
         label: 'Continue with Email',
         onTap: () => setState(() => _showEmailForm = true),
       ),
       const SizedBox(height: 20),
-      Row(
-        children: const [
-          Expanded(child: Divider()),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              'OR',
-              style: TextStyle(color: AppColors.mutedText, fontSize: 12),
-            ),
+      // Guest option — subtle, not a full button
+      Center(
+        child: TextButton(
+          onPressed: () => _run(AuthService.instance.signInAsGuest),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.mutedText,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
-          Expanded(child: Divider()),
-        ],
-      ),
-      const SizedBox(height: 20),
-      TextButton(
-        onPressed: () => _run(AuthService.instance.signInAsGuest),
-        child: const Text('Continue as Guest'),
+          child: const Text(
+            'Skip for now — Continue as Guest',
+            style: TextStyle(fontSize: 13),
+          ),
+        ),
       ),
     ];
   }
 
   List<Widget> _buildEmailForm() {
     return [
-      Text(
-        _isSignUp ? 'Create your account' : 'Welcome back',
-        style: Theme.of(context).textTheme.titleLarge,
+      // Header
+      Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
+            color: AppColors.ink,
+            onPressed: () => setState(() {
+              _showEmailForm = false;
+              _isSignUp = false;
+            }),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _isSignUp ? 'Create account' : 'Welcome back',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ],
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: 20),
       if (_isSignUp) ...[
-        TextField(
+        _buildTextField(
           controller: _nameCtrl,
-          textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(hintText: 'Your name'),
+          hint: 'Your name',
+          icon: Icons.person_outline_rounded,
+          action: TextInputAction.next,
         ),
         const SizedBox(height: 12),
       ],
-      TextField(
+      _buildTextField(
         controller: _emailCtrl,
-        keyboardType: TextInputType.emailAddress,
-        textInputAction: TextInputAction.next,
-        autofillHints: const [AutofillHints.email],
-        decoration: const InputDecoration(hintText: 'Email address'),
+        hint: 'Email address',
+        icon: Icons.mail_outline_rounded,
+        action: TextInputAction.next,
+        type: TextInputType.emailAddress,
+        autofill: AutofillHints.email,
       ),
       const SizedBox(height: 12),
-      TextField(
+      _buildTextField(
         controller: _passwordCtrl,
-        obscureText: _obscure,
-        textInputAction: TextInputAction.done,
-        autofillHints: const [AutofillHints.password],
+        hint: 'Password',
+        icon: Icons.lock_outline_rounded,
+        action: TextInputAction.done,
+        autofill: AutofillHints.password,
+        obscure: _obscure,
         onSubmitted: (_) => _submitEmailForm(),
-        decoration: InputDecoration(
-          hintText: 'Password',
-          suffixIcon: IconButton(
-            icon: Icon(_obscure
+        suffix: IconButton(
+          icon: Icon(
+            _obscure
                 ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined),
-            onPressed: () => setState(() => _obscure = !_obscure),
+                : Icons.visibility_off_outlined,
+            size: 20,
+            color: AppColors.mutedText,
           ),
+          onPressed: () => setState(() => _obscure = !_obscure),
         ),
       ),
       if (!_isSignUp)
@@ -251,42 +310,90 @@ class _LoginScreenState extends State<LoginScreen> {
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: _forgotPassword,
-            child: const Text('Forgot password?'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.mutedText,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Forgot password?',
+                style: TextStyle(fontSize: 12)),
           ),
         ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 16),
       SizedBox(
         width: double.infinity,
+        height: 52,
         child: ElevatedButton(
           onPressed: _submitEmailForm,
-          child: Text(_isSignUp ? 'SIGN UP' : 'SIGN IN'),
+          child: Text(_isSignUp ? 'Create Account' : 'Sign In'),
         ),
       ),
-      const SizedBox(height: 8),
-      TextButton(
-        onPressed: () => setState(() => _isSignUp = !_isSignUp),
-        child: Text(_isSignUp
-            ? 'Already have an account? Sign in'
-            : "Don't have an account? Sign up"),
-      ),
-      TextButton(
-        onPressed: () => setState(() {
-          _showEmailForm = false;
-          _isSignUp = false;
-        }),
-        child: const Text('Back'),
+      const SizedBox(height: 12),
+      Center(
+        child: TextButton(
+          onPressed: () => setState(() => _isSignUp = !_isSignUp),
+          style: TextButton.styleFrom(foregroundColor: AppColors.inkSoft),
+          child: Text(
+            _isSignUp
+                ? 'Already have an account? Sign in'
+                : "Don't have an account? Sign up",
+            style: const TextStyle(fontSize: 13),
+          ),
+        ),
       ),
     ];
   }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputAction action = TextInputAction.next,
+    TextInputType type = TextInputType.text,
+    String? autofill,
+    bool obscure = false,
+    void Function(String)? onSubmitted,
+    Widget? suffix,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: type,
+      textInputAction: action,
+      obscureText: obscure,
+      autofillHints: autofill != null ? [autofill] : null,
+      onSubmitted: onSubmitted,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 18, color: AppColors.mutedText),
+        suffixIcon: suffix,
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 16),
+      child: Text(
+        'By continuing you agree to our Terms & Privacy Policy',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.mutedText,
+            ),
+      ),
+    );
+  }
 }
 
-class _AuthButton extends StatelessWidget {
-  final IconData icon;
+class _SocialButton extends StatelessWidget {
+  final String? svgPath;
+  final IconData? iconData;
   final String label;
   final VoidCallback onTap;
 
-  const _AuthButton({
-    required this.icon,
+  const _SocialButton({
+    this.svgPath,
+    this.iconData,
     required this.label,
     required this.onTap,
   });
@@ -295,12 +402,34 @@ class _AuthButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
+      height: 52,
+      child: OutlinedButton(
         onPressed: onTap,
-        icon: Icon(icon, size: 22),
-        label: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.ink,
+          side: const BorderSide(color: AppColors.line, width: 1.2),
+          backgroundColor: AppColors.surface,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(iconData, size: 22, color: AppColors.inkSoft),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.ink,
+              ),
+            ),
+            const Spacer(),
+            const Icon(Icons.chevron_right_rounded,
+                size: 18, color: AppColors.mutedText),
+          ],
         ),
       ),
     );

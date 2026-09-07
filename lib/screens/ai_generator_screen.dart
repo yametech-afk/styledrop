@@ -86,7 +86,6 @@ class _AiGeneratorScreenState extends State<AiGeneratorScreen> {
       temperatureC = 24; // mild — no jacket forced, not "too hot" either
       weatherCondition = 'Mild';
     }
-    await Future.delayed(const Duration(milliseconds: 1100));
 
     final outfits = AiStylistService.generateOutfits(
       wardrobe: wardrobe,
