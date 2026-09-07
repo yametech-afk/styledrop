@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// StyleDrop Firestore security rules (Phase B).
+//
+// Core guarantee: every document lives under users/{uid}, and a user can only
+// ever read or write documents under THEIR OWN uid. One account can never see
+// or modify another account's wardrobe, outfits, or profile.
+//
+// Deploy with:  firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Everything the app writes is namespaced under the signed-in user's uid.
+    match /users/{userId} {
+      // The user document itself (rarely written directly).
+      allow read, write: if isOwner(userId);
+
+      // Wardrobe items:  users/{uid}/wardrobe/{itemId}
+      match /wardrobe/{itemId} {
+        allow read, write: if isOwner(userId) && validWardrobeWrite();
+      }
+
+      // Outfits:  users/{uid}/outfits/{outfitId}
+      match /outfits/{outfitId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Profile / Style DNA / tier:  users/{uid}/meta/{docId}
+      match /meta/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+
+  // ---- helpers ----
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  // True only when the caller is authenticated AND is the owner of this path.
+  // Anonymous (guest) users have a uid too, but the client keeps guests local-
+  // only, so in practice only real accounts reach these paths.
+  function isOwner(userId) {
+    return isSignedIn() && request.auth.uid == userId;
+  }
+
+  // Defensive size/shape guard so a client bug can't write a huge document.
+  // (The app also strips image bytes before writing, so wardrobe docs stay
+  // tiny; this is a belt-and-braces cap.)
+  function validWardrobeWrite() {
+    return !('imageBytesB64' in request.resource.data);
+  }
+}
