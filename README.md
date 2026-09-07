@@ -1,31 +1,60 @@
-# styledrop
+# StyleDrop 🎨
 
-A new Flutter project.
+**Your AI Wardrobe Stylist** — a Flutter app that catalogs your clothes,
+scores outfits with AI, and syncs your wardrobe across devices.
 
-## Getting Started
+## What's inside
 
-This project is a starting point for a Flutter application.
+- **Flutter app** (this repo root) — 15 screens: wardrobe, AI outfit
+  generator, mix & match, calendar, analytics; Firebase Auth
+  (Google / Apple / Email / Guest) with Firestore sync and Hive local
+  storage; free/PRO tier gating.
+- **GitHub Actions** — `.github/workflows/build-apk.yml` builds a release APK
+  on every push to `main` and uploads it as the `styledrop-release-apk`
+  artifact.
+- **`firestore.rules`** — per-user data isolation for cloud sync.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
----
-
-## 🔄 StyleDrop rebrand notes (2026-09-07)
-
-### Cloudflare Pages project URL
-An existing Pages project URL (e.g. `https://fitai-proxy.pages.dev`) **cannot be renamed** after creation. For new deployments, create a fresh project so the URL matches the brand; existing deployments keep working on their old URL until migrated:
+## Quick start
 
 ```bash
-npx wrangler pages project create styledrop-proxy
-npm run deploy
+flutter pub get
+flutter run
 ```
 
-### Firebase project ID
-Firebase **project IDs are permanent and cannot be renamed**. Reuse the existing project (re-run `flutterfire configure --project=<existing-id>`) or create a new one named `styledrop-wardrobe`. After configure, re-download `google-services.json` and regenerate `firebase_options.dart` — the placeholder in this repo must be replaced before real sign-in/sync works.
+**Required before sign-in / sync works:** see [SETUP_GUIDE.md](SETUP_GUIDE.md)
+for `google-services.json`, SHA-1 fingerprints, and Firestore setup. The
+committed `lib/firebase_options.dart` is a placeholder that compiles but does
+not authenticate.
+
+## Build a release APK
+
+```bash
+flutter build apk --release \
+  --dart-define=PROXY_BASE_URL=https://styledrop-proxy.pages.dev \
+  --dart-define=APP_SHARED_SECRET=
+```
+
+Or run the **Build Android APK (StyleDrop)** workflow from the Actions tab —
+no local Flutter SDK needed. Full details: [BUILD_ANDROID.md](BUILD_ANDROID.md).
+
+## Repository layout
+
+```
+.github/workflows/   CI: Build Android APK (StyleDrop)
+lib/                 Flutter source (screens, services, models)
+assets/              Icon, splash, seed item images
+android/ ios/ web/ linux/ macos/ windows/   Platform hosts
+firestore.rules      Firestore security rules
+SETUP_GUIDE.md       Firebase + build setup (start here)
+BUILD_ANDROID.md     Local APK build & signing
+FIREBASE_SETUP.md    Firebase project walkthrough
+FIRESTORE_SETUP.md   Cloud sync setup
+PATCH_NOTES.md       Change history
+```
+
+## Security notes
+
+- `android/app/google-services.json` and `android/key.properties` are
+  git-ignored on purpose — never commit or share them.
+- The release signing keystore is **not** in the repo; generate your own for
+  Play Store uploads.

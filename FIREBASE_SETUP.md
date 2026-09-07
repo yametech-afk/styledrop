@@ -224,4 +224,4 @@ npm run deploy
 ```
 
 ### Firebase project ID
-Firebase **project IDs are permanent and cannot be renamed**. Reuse the existing project (re-run `flutterfire configure --project=<existing-id>`) or create a new one named `styledrop-wardrobe`. After configure, re-download `google-services.json` and regenerate `firebase_options.dart` — the placeholder in this repo must be replaced before real sign-in/sync works.
+Firebase **project IDs are permanent and cannot be renamed**. This app is wired to the existing project **`styledrop-e0c02`** (see `android/app/google-services.json`, downloaded but git-ignored). Reuse it via `flutterfire configure --project=styledrop-e0c02`. After configure, re-download `google-services.json` and regenerate `firebase_options.dart` — the placeholder in this repo must be replaced before real sign-in/sync works. See [SETUP_GUIDE.md](SETUP_GUIDE.md) for the full walkthrough.

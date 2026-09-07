@@ -26,7 +26,7 @@ falls back gracefully). To use real Firebase Auth / Firestore:
 
 ```bash
 dart pub global activate flutterfire_cli
-flutterfire configure --project=styledrop-wardrobe --platforms=android
+flutterfire configure --project=styledrop-e0c02 --platforms=android
 ```
 
 This rewrites `lib/firebase_options.dart` with your real project IDs and API keys.

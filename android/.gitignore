@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Firebase Android config — contains project-specific API keys. Each developer
+# downloads their own copy from the Firebase console (see SETUP_GUIDE.md).
+/app/google-services.json
