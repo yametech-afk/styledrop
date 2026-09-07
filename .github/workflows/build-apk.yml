@@ -27,11 +27,9 @@ jobs:
           cache: true
 
       - name: Flutter pub get
-        working-directory: styledrop
         run: flutter pub get
 
       - name: Build release APK
-        working-directory: styledrop
         run: |
           flutter build apk --release \
             --dart-define=PROXY_BASE_URL=https://styledrop-proxy.pages.dev \
@@ -41,5 +39,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: styledrop-release-apk
-          path: styledrop/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
