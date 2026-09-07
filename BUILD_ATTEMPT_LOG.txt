@@ -1,0 +1,3 @@
+Upgrading gradle.properties
+Upgrading gradle.properties
+Running Gradle task 'assembleRelease'...                        
