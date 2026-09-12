@@ -542,7 +542,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, true),
-            style: TextButton.styleFrom(color: AppColors.error),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('DELETE'),
           ),
         ],
