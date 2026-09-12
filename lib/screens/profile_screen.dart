@@ -5,6 +5,8 @@ import '../providers/profile_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../providers/outfit_provider.dart';
 import '../services/notification_service.dart';
+import '../services/auth_service.dart';
+import '../services/storage_service.dart';
 import '../services/usage_limit_service.dart';
 import '../utils/constants.dart';
 import '../utils/color_mapper.dart';
@@ -12,8 +14,15 @@ import '../widgets/paywall.dart';
 import 'analytics_screen.dart';
 import 'missing_items_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _deleting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -276,6 +285,14 @@ class ProfileScreen extends StatelessWidget {
               'Notifications',
               () => _showNotifications(context),
             ),
+            // Google Play requires an in-app way to delete the account and
+            // its data (Account Deletion policy) — do not remove.
+            _menuTile(
+              context,
+              Icons.delete_forever_outlined,
+              'Delete account',
+              _deleting ? () {} : () => _confirmDeleteAccount(context),
+            ),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () => _logout(context),
@@ -503,6 +520,97 @@ class ProfileScreen extends StatelessWidget {
     // AppRoot (main.dart) automatically returns to the LoginScreen, so no
     // manual navigation is required here.
     await context.read<ProfileProvider>().logout();
+  }
+
+  /// Confirmation dialog for account deletion (Google Play Account
+  /// Deletion policy). Spells out exactly what is erased before the user
+  /// commits — deletion is irreversible.
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This permanently deletes your StyleDrop account, including your '
+          'wardrobe, saved outfits, Style DNA and cloud sync data. This '
+          'cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            style: TextButton.styleFrom(color: AppColors.error),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _deleteAccount(context);
+    }
+  }
+
+  Future<void> _deleteAccount(BuildContext context) async {
+    setState(() => _deleting = true);
+    // Capture navigator/messenger handles BEFORE any await: once the auth
+    // stream fires, this screen is replaced by the LoginScreen and its
+    // BuildContext is dead, but the root NavigatorState stays valid.
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Dialog(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Deleting your account…'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    void closeDialog() {
+      if (rootNavigator.canPop()) rootNavigator.pop();
+    }
+
+    try {
+      final wardrobe = context.read<WardrobeProvider>();
+      final outfits = context.read<OutfitProvider>();
+      // 1) Cloud data + Firebase Auth account (needs the live session).
+      await AuthService.instance.deleteAccount(
+        items: wardrobe.items.toList(),
+        outfits: outfits.outfits.toList(),
+      );
+      // 2) Whatever remains on this device (Hive cache, counters).
+      await StorageService.clearAll();
+    } on AuthException catch (e) {
+      closeDialog();
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      if (mounted) setState(() => _deleting = false);
+      return;
+    } catch (_) {
+      closeDialog();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not delete your account. Try again.'),
+        ),
+      );
+      if (mounted) setState(() => _deleting = false);
+      return;
+    }
+
+    // The auth stream now emits null, so AppRoot swaps to the LoginScreen
+    // automatically — just drop the progress dialog on the way out.
+    closeDialog();
   }
 }
 

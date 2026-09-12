@@ -155,6 +155,53 @@ class FirestoreService {
   }
 
   // ------------------------------------------------------------------
+  // Account deletion (Google Play Account Deletion policy requirement)
+  // ------------------------------------------------------------------
+
+  /// Deletes every document the signed-in user owns:
+  /// users/{uid}/wardrobe/*, users/{uid}/outfits/*, users/{uid}/meta/profile,
+  /// and the users/{uid} document itself.
+  ///
+  /// Firestore batches are capped at 500 writes, so the item/outfit deletes
+  /// are chunked. Callers must invoke this BEFORE deleting the Firebase Auth
+  /// account — the security rules require an authenticated session whose uid
+  /// matches the path being written.
+  Future<void> deleteAllUserData({
+    required List<WardrobeItem> items,
+    required List<Outfit> outfits,
+  }) async {
+    if (!canSync) return;
+    final doc = _userDoc;
+    if (doc == null) return;
+
+    const chunkSize = 490;
+    final wardrobeCol = doc.collection('wardrobe');
+    final outfitsCol = doc.collection('outfits');
+
+    for (var i = 0; i < items.length; i += chunkSize) {
+      final batch = _db.batch();
+      for (final item in items.skip(i).take(chunkSize)) {
+        batch.delete(wardrobeCol.doc(item.id));
+      }
+      await batch.commit();
+    }
+
+    for (var i = 0; i < outfits.length; i += chunkSize) {
+      final batch = _db.batch();
+      for (final outfit in outfits.skip(i).take(chunkSize)) {
+        batch.delete(outfitsCol.doc(outfit.id));
+      }
+      await batch.commit();
+    }
+
+    // Profile doc + the user document itself (delete is idempotent).
+    final finalBatch = _db.batch();
+    finalBatch.delete(doc.collection('meta').doc('profile'));
+    finalBatch.delete(doc);
+    await finalBatch.commit();
+  }
+
+  // ------------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------------
   /// Removes heavy binary payloads so a document can never exceed the ~1 MB

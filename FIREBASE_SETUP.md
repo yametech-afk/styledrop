@@ -10,7 +10,10 @@ config) to a **fully working, real Firebase login** on Web, Android and iOS.
 > - `lib/providers/profile_provider.dart` — identity sourced from the Firebase user.
 > - `lib/main.dart` — `Firebase.initializeApp()` + `StreamBuilder` auth routing.
 > - `lib/screens/login_screen.dart` — buttons wired to `AuthService`.
-> - `lib/firebase_options.dart` — **placeholder**; you replace it in Step 3.
+> - `lib/firebase_options.dart` — **real Android config for project
+>   `styledrop-e0c02`**; regenerate via Step 3 if the project changes (web/iOS
+>   entries still carry the Android appId until those platforms are
+>   registered and configured).
 >
 > You only need to do the account/console steps below.
 
@@ -65,9 +68,11 @@ flutterfire configure --project=styledrop-prod
 - This **overwrites** `lib/firebase_options.dart` with your real keys and also
   drops platform config files (see below). Commit the regenerated file.
 
-> The placeholder `REPLACE_ME_*` values are only there so the app compiles
-> before you run this. `Firebase.initializeApp()` will fail at runtime until
-> this step is done.
+> The Android entries in `lib/firebase_options.dart` already carry the real
+> project values. Re-run `flutterfire configure` only when adding web/iOS or
+> changing projects. Android does not use the `google-services` Gradle plugin
+> in this repo — Firebase initializes from `firebase_options.dart` alone, so
+> keep that file's Android values accurate.
 
 ---
 

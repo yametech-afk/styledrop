@@ -9,9 +9,10 @@ scores outfits with AI, and syncs your wardrobe across devices.
   generator, mix & match, calendar, analytics; Firebase Auth
   (Google / Apple / Email / Guest) with Firestore sync and Hive local
   storage; free/PRO tier gating.
-- **GitHub Actions** — `.github/workflows/build-apk.yml` builds a release APK
-  on every push to `main` and uploads it as the `styledrop-release-apk`
-  artifact.
+- **GitHub Actions** — `.github/workflows/build-apk.yml` builds a release
+  **App Bundle (.aab)** on every push to `main` and uploads it as the
+  `styledrop-release-aab` artifact (optionally signed when the keystore
+  secrets are configured).
 - **`firestore.rules`** — per-user data isolation for cloud sync.
 
 ## Quick start
@@ -54,7 +55,8 @@ PATCH_NOTES.md       Change history
 
 ## Security notes
 
-- `android/app/google-services.json` and `android/key.properties` are
-  git-ignored on purpose — never commit or share them.
+- `android/app/google-services.json`, `android/key.properties`, and any
+  `*.jks`/`*.keystore` files are git-ignored on purpose — never commit or
+  share them (pass the keystore to CI via repo secrets instead).
 - The release signing keystore is **not** in the repo; generate your own for
   Play Store uploads.

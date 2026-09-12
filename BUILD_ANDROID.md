@@ -21,8 +21,9 @@ flutter doctor
 
 ## 1. Firebase config (best effort)
 
-The repo ships with a **placeholder** `lib/firebase_options.dart` (compile-safe, runtime
-falls back gracefully). To use real Firebase Auth / Firestore:
+`lib/firebase_options.dart` already contains **real Android config** for
+project `styledrop-e0c02` (web/iOS entries need a re-run of
+`flutterfire configure` once those platforms are registered). To regenerate:
 
 ```bash
 dart pub global activate flutterfire_cli
@@ -82,8 +83,19 @@ sha256sum build/app/outputs/flutter-apk/app-release.apk
 
 A GitHub Actions workflow is included at
 `.github/workflows/build-apk.yml`. Push the repo to GitHub, open
-**Actions → Build Android APK (StyleDrop) → Run workflow**, then download the
-`styledrop-release-apk` artifact.
+**Actions → Build Android App Bundle (StyleDrop) → Run workflow**, then
+download the `styledrop-release-aab` artifact. To get a **signed** AAB from
+CI, add these repo secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|---|---|
+| `ANDROID_UPLOAD_KEY_BASE64` | `base64 -w0 styledrop-upload.jks` |
+| `KEYSTORE_PASSWORD` | storePassword |
+| `KEY_PASSWORD` | keyPassword |
+| `KEY_ALIAS` | `upload` |
+
+Without the secrets, CI builds with the debug key — fine for smoke tests,
+not for Play uploads.
 
 ## Troubleshooting
 

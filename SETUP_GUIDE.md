@@ -38,11 +38,13 @@ API keys — never share it publicly).
    ls -la android/app/google-services.json
    ```
 
-> **Security note:** `android/.gitignore` excludes this file, so `git status`
-> will not offer to commit it. Do not force-add it (`git add -f`).
+> **Security note:** `android/.gitignore` excludes this file, so it is NOT
+> tracked in git — do not force-add it (`git add -f`).
 
-The committed `lib/firebase_options.dart` is a **compile-safe placeholder**.
-Generate the real one after you have a Firebase project:
+`lib/firebase_options.dart` contains **real config** for the Android app of
+project `styledrop-e0c02` (web/iOS entries still need a re-run of
+`flutterfire configure` with those platforms registered). If you need to
+regenerate it:
 
 ```bash
 dart pub global activate flutterfire_cli
@@ -58,6 +60,7 @@ Firebase console → **Build → Authentication → Sign-in method**, enable:
 - [x] **Anonymous** — guest mode
 - [x] **Email/Password** — email sign-up / sign-in
 - [x] **Google** — requires the SHA-1 step below
+- [x] **Apple** — iOS only (required if you ship other social login on iOS)
 
 ---
 
@@ -119,29 +122,35 @@ Health check: `curl https://styledrop-proxy.pages.dev/api/health`
 
 ---
 
-## 7. Build the APK
+## 7. Build the App Bundle (AAB)
 
 ```bash
 flutter pub get
 
-flutter build apk --release \
+flutter build appbundle --release \
   --dart-define=PROXY_BASE_URL=https://styledrop-proxy.pages.dev \
   --dart-define=APP_SHARED_SECRET=
 ```
 
-Output: `build/app/outputs/flutter-apk/app-release.apk`
+Output: `build/app/outputs/bundle/release/app-release.aab`
+
+The Play Store requires an **.aab** (App Bundle) for new apps — use
+`flutter build apk` only for local sideloading / quick device tests.
 
 If you omit the `--dart-define`s the app still builds and runs — AI detection
 falls back to a local heuristic instead of crashing.
 
 **CI option:** this repo has a GitHub Actions workflow
-(`.github/workflows/build-apk.yml`, "Build Android APK (StyleDrop)") that
-builds the release APK on every push to `main` / `master` (plus manual
-`workflow_dispatch`) and uploads it as the `styledrop-release-apk` artifact —
-no local Flutter SDK needed.
+(`.github/workflows/build-apk.yml`, "Build Android App Bundle (StyleDrop)")
+that builds the release AAB on every push to `main` / `master` (plus manual
+`workflow_dispatch`) and uploads it as the `styledrop-release-aab` artifact —
+no local Flutter SDK needed. If you add the repo secrets
+(`ANDROID_UPLOAD_KEY_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`,
+`KEY_ALIAS`), CI restores your upload keystore and produces a **signed** AAB
+ready for the Play Console; without secrets it falls back to the debug key.
 
-> The workflow runs `flutter pub get` and `flutter build apk` at the **repo
-> root** — do not add a `working-directory:` to these steps; `pubspec.yaml`
+> The workflow runs `flutter pub get` and `flutter build appbundle` at the
+> **repo root** — do not add a `working-directory:` to these steps; `pubspec.yaml`
 > lives at the repository root.
 
 ---

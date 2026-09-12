@@ -71,6 +71,15 @@ class StorageService {
     await _profile.put('profile', profile.toMap());
   }
 
+  /// Wipes every local box (wardrobe, outfits, profile, meta counters).
+  /// Used by account deletion so no personal data remains on the device.
+  static Future<void> clearAll() async {
+    await _wardrobe.clear();
+    await _outfits.clear();
+    await _profile.clear();
+    await _meta.clear();
+  }
+
   // ---------------- Meta counters ----------------
   static Box get _meta => Hive.box(metaBox);
 

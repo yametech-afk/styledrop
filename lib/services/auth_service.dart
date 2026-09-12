@@ -5,6 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import '../models/wardrobe_item.dart';
+import '../models/outfit.dart';
+import 'firestore_service.dart';
 
 /// Real authentication backed by Firebase Auth.
 ///
@@ -182,6 +185,41 @@ class AuthService {
       ).signOut();
     } catch (_) {}
     await _auth.signOut();
+  }
+
+  // ------------------------------------------------------------------
+  // Account deletion (Google Play Account Deletion policy requirement:
+  // apps that allow account creation must let users delete the account
+  // and its cloud data from inside the app).
+  // ------------------------------------------------------------------
+
+  /// Deletes the cloud library for the signed-in user (wardrobe, outfits,
+  /// profile) via a Firestore batch, then deletes the Firebase Auth account
+  /// itself. Guests are a no-op (they have no real account and sync nothing).
+  ///
+  /// Local-only data (Hive) is cleared by the caller afterwards.
+  ///
+  /// May throw [AuthException], e.g. `requires-recent-login` when the session
+  /// is too old — the UI prompts the user to sign in again and retry.
+  Future<void> deleteAccount({required List<WardrobeItem> items, required List<Outfit> outfits}) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // 1) Cloud data first (needs an authenticated session; deleting the auth
+    //    account first would make the rules reject these writes).
+    if (!user.isAnonymous) {
+      await FirestoreService.instance.deleteAllUserData(
+        items: items,
+        outfits: outfits,
+      );
+    }
+
+    // 2) The auth account itself.
+    try {
+      await user.delete();
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_friendly(e));
+    }
   }
 
   // ------------------------------------------------------------------
